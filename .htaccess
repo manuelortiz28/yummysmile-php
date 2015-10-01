@@ -1,0 +1,6 @@
+#/yummysmile/.htaccess
+<IfModule mod_rewrite.c>
+    RewriteEngine on
+    RewriteRule  ^$ public/    [L]
+    RewriteRule  ((?s).*) public/$1 [L]
+</IfModule>
