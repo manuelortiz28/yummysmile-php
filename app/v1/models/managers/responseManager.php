@@ -2,8 +2,14 @@
 	use Phalcon\Http\Response;
 	class ResponseManager {
 
-		function getResponse($responseData){
+		function getOKResponse(){
 			$response = new Response();
+			$response->setHeader("Content-Type", "application/json");
+			return $response;
+		}
+
+		function getResponse($responseData){
+			$response = $this->getOKResponse();
 			$response->setJsonContent($responseData);
 			return $response;
 		}
@@ -16,14 +22,14 @@
 		}
 
 		function getDeletedResponse(){
-			$response = new Response();
+			$response = $this->getOKResponse();
 			$response->setStatusCode(204, "No Content");
 
 			return $response;
 		}
 
 		function getErrorResponse($exception){
-			$response = new Response();
+			$response = $this->getOKResponse();
 
 			$response->setJsonContent(
 		            	array(
@@ -50,7 +56,7 @@
 		}
 
 		function getGenericErrorResponse($e){
-			return $this->getErrorResponse(new YummyException("General error ".$e->getMessage(), 500));
+			return $this->getErrorResponse(new YummyException("General error: ".$e->getMessage(), 500));
 		}
 
 		function getAttributes($fields, $entity) {

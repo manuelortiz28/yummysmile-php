@@ -55,7 +55,7 @@ class AuthenticationManager implements InjectionAwareInterface {
         $userArray = $this->_di->get("responseManager")->getAttributes($this->userFields, $user);
         $userArray["token"]=$user->getSessionToken();
 		
-		return $$userArray;
+		return $userArray;
 	}
 
     public function signin($authenticationData) {
@@ -124,10 +124,22 @@ class AuthenticationManager implements InjectionAwareInterface {
 		return $user;
 	}
 
-    function isLoggedIn($token) {
-        try {
-            ParseUser::become($token);
-            return true;
+	function signout($token, $userId) {
+
+		if ($this->isLoggedIn($token, $userId)) {
+			ParseUser::logOut();//Closes any session
+		}
+
+		return true;
+	}
+
+    function isLoggedIn($token, $userId) {
+		try {
+			ParseUser::become($token);
+
+			if (ParseUser::getCurrentUser() && ParseUser::getCurrentUser()->getObjectId() == $userId) {
+				return ParseUser::getCurrentUser();
+			}
         } catch (ParseException $ex) {
         }
         return false;

@@ -1,6 +1,6 @@
 <?php
 use Phalcon\Http\Response;
-$app->post("/api/loginsn", function () use ($app, $di) {
+$app->post("/loginsn", function () use ($app, $di) {
 	$authenticationManager = $di->get("authenticationManager");
 	$responseManager = $di->get("responseManager");
 
@@ -15,18 +15,18 @@ $app->post("/api/loginsn", function () use ($app, $di) {
 	}catch(YummyException $e){
 		return $responseManager->getErrorResponse($e);
 	} catch(Exception $e) {
-		return $responseManager->getGenericErrorResponse();
+		return $responseManager->getGenericErrorResponse($e);
 	}
 });
 
-$app->post("/api/login", function () use ($di, $app) {
+$app->post("/login", function () use ($di, $app) {
 	$authenticationManager = $di->get("authenticationManager");
 	$responseManager = $di->get("responseManager");
 
 	$authenticationData = $app->request->getJsonRawBody();//email, password
 
 	try {
-        return $responseManager->getResponse($authenticationManager->signin($authenticationData));
+		return $responseManager->getResponse($authenticationManager->signin($authenticationData));
 	}catch(YummyException $e){
 		return $responseManager->getErrorResponse($e);
 	} catch(Exception $e) {
@@ -34,7 +34,7 @@ $app->post("/api/login", function () use ($di, $app) {
 	}
 });
 
-$app->post("/api/signup", function () use ($di, $app) {
+$app->post("/signup", function () use ($di, $app) {
 	$authenticationManager = $di->get("authenticationManager");
 	$responseManager = $di->get("responseManager");
 
@@ -45,7 +45,24 @@ $app->post("/api/signup", function () use ($di, $app) {
 	}catch(YummyException $e){
 		return $responseManager->getErrorResponse($e);
 	} catch(Exception $e) {
-		return $responseManager->getGenericErrorResponse();
+		return $responseManager->getGenericErrorResponse($e);
+	}
+});
+
+$app->get("/logout", function () use ($di, $app) {
+	$authenticationManager = $di->get("authenticationManager");
+	$responseManager = $di->get("responseManager");
+
+	$token = $app->request->getHeader("TOKEN");
+	$userId = $app->request->getHeader("USERID");
+
+	try {
+		$authenticationManager->signout($token, $userId);
+		return new Response();
+	}catch(YummyException $e){
+		return $responseManager->getErrorResponse($e);
+	} catch(Exception $e) {
+		return $responseManager->getGenericErrorResponse($e);
 	}
 });
 ?>

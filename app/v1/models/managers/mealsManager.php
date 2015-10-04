@@ -5,7 +5,7 @@ use Phalcon\DI\InjectionAwareInterface;
 
 class MealsManager implements InjectionAwareInterface {
 
-	private $fields = array("objectId", "name", "price");
+	private $fields = array("objectId", "name", "filename");
 	protected $_di;
 
     public function setDI (Phalcon\DiInterface $dependencyInjector){
@@ -16,9 +16,10 @@ class MealsManager implements InjectionAwareInterface {
     	return $this->_di;
     }
 
-	public function getMeals($name) {
+	public function getMeals($name, $user) {
 
 		$mealQuery = new ParseQuery("Meal");
+		$mealQuery->equalTo("user", $user);
 
 		if($name)
 			$mealQuery->startsWith("name", $name);
@@ -27,8 +28,11 @@ class MealsManager implements InjectionAwareInterface {
 
 		$i=0;
 		$rows=[];
-		foreach($results as $meal) {
-			$rows[$i++] = $this->_di->get("responseManager")->getAttributes($this->fields, $meal);
+		foreach($results as $pMeal) {
+			$pMeal->set("filename", "/public/images/".$pMeal->get("filename").".jpg");
+			$mealAttrs = $this->_di->get("responseManager")->getAttributes($this->fields, $pMeal);
+
+			$rows[$i++] = $mealAttrs;
 		}
 
 		return $rows;
@@ -37,7 +41,8 @@ class MealsManager implements InjectionAwareInterface {
 	public function createMeal($meal) {
 		$pMeal = new ParseObject("Meal");
 		$pMeal->set("name", $meal->name);
-		$pMeal->set("price", $meal->price);
+		$pMeal->set("user", $meal->user);
+		$pMeal->set("filename", $meal->filename);
 
 		try {
 			$pMeal->save();
