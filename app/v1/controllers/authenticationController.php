@@ -58,7 +58,7 @@ $app->get("/logout", function () use ($di, $app) {
 
 	try {
 		$authenticationManager->signout($token, $userId);
-		return new Response();
+		return $responseManager->getNotContentResponse();
 	}catch(YummyException $e){
 		return $responseManager->getErrorResponse($e);
 	} catch(Exception $e) {

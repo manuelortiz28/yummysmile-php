@@ -1,5 +1,6 @@
 <?php
 use Parse\ParseUser;
+use Parse\ParseQuery;
 use Parse\ParseException;
 use Phalcon\DI\InjectionAwareInterface;
 
@@ -54,6 +55,8 @@ class AuthenticationManager implements InjectionAwareInterface {
 
         $userArray = $this->_di->get("responseManager")->getAttributes($this->userFields, $user);
         $userArray["token"]=$user->getSessionToken();
+
+        $this->changeExpirationDate($user->getSessionToken());
 		
 		return $userArray;
 	}
@@ -70,6 +73,9 @@ class AuthenticationManager implements InjectionAwareInterface {
 
         $userArray = $this->_di->get("responseManager")->getAttributes($this->userFields, $user);
         $userArray["token"]=$user->getSessionToken();
+
+        $this->changeExpirationDate($user->getSessionToken());
+
 		return $userArray;
 	}
 
@@ -113,7 +119,8 @@ class AuthenticationManager implements InjectionAwareInterface {
 
 		if($authenticated) {
 			try {
-			  $user = ParseUser::logIn($authenticationData->email, $this->snPassword);
+                $user = ParseUser::logIn($authenticationData->email, $this->snPassword);
+                $this->changeExpirationDate($user->getSessionToken());
 			} catch (ParseException $error) {
 				throw new YummyException("Unable to login", 500);
 			}
@@ -159,6 +166,12 @@ class AuthenticationManager implements InjectionAwareInterface {
 
 	function validateGooglePlusSession($idProfile, $token) {
 		return false;
+	}
+
+    //FIXME Currently it is not working since Parse could not change session expiration date
+	function changeExpirationDate($token) {
+		//Add 2 days to current date and apply the ISO8601 format
+		$expirationDate = gmdate(DateTime::ISO8601, time() + (2 * 24 * 60 * 60));
 	}
 }
 ?>

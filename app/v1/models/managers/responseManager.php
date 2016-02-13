@@ -21,7 +21,7 @@
 			return $response;
 		}
 
-		function getDeletedResponse(){
+		function getNotContentResponse(){
 			$response = $this->getOKResponse();
 			$response->setStatusCode(204, "No Content");
 
@@ -41,16 +41,15 @@
 
 			switch ($exception->getCode()) {
 				case 401:
-					$response->setStatusCode("Unauthorized", 401);
+					$response->setStatusCode(401, "Unauthorized");
 					break;
 				case 404:
-					$response->setStatusCode("Not Found", 404);
+					$response->setStatusCode(404, "Not Found");
 					break;
 				case 500:
 				default:
-					$response->setStatusCode("Internal Server Error", 500);
+					$response->setStatusCode(500, "Internal Server Error");
 			}
-			
 
 			return $response;
 		}

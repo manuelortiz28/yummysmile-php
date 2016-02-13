@@ -11,7 +11,7 @@ $app->get("/meals", function () use ($app, $di) {
         return $responseManager->getResponse(
             array('meals' => $mealsManager->getMeals($name, $user))
         );
-    }catch(YummyException $e){
+    } catch(YummyException $e){
 		return $responseManager->getErrorResponse($e);
 	} catch(Exception $e) {
 		return $responseManager->getGenericErrorResponse($e);
@@ -52,25 +52,14 @@ $app->post("/meals", function () use ($di, $app) {
 	}
 });
 
-function tempnam_sfx($path, $suffix)
-{
-    do
-    {
-        $fileName = strval(mt_rand());
-        $file = $path."/".$fileName.$suffix;
-        $fp = @fopen($file, 'x');
-    }
-    while(!$fp);
-
-    fclose($fp);
-    return $fileName;
-}
-
 $app->put("/meals", function () use ($di, $app) {
 	$mealsManager = $di->get("mealsManager");
 	$responseManager = $di->get("responseManager");
 	$meal = $app->request->getJsonRawBody();
 	try {
+        $user = mustBeLogged($app->request, $di);
+        $meal->user = $user;
+
 		return $responseManager->getResponse($mealsManager->updateMeal($meal));
 	}catch(YummyException $e){
 		return $responseManager->getErrorResponse($e);
@@ -79,6 +68,24 @@ $app->put("/meals", function () use ($di, $app) {
 	}
 });
 
+$app->delete("/meals/{id:[0-9A-Za-z]+}", function ($mealId) use ($di, $app) {
+	$mealsManager = $di->get("mealsManager");
+	$responseManager = $di->get("responseManager");
+	try {
+        $user = mustBeLogged($app->request, $di);
+
+        //FIXME Only the owner should be able to detele its meal
+		$mealsManager->deleteMeal($mealId);
+		return $responseManager->getNotContentResponse();
+	}catch(YummyException $e){
+		return $responseManager->getErrorResponse($e);
+	} catch(Exception $e) {
+		return $responseManager->getGenericErrorResponse();
+	}
+});
+
+
+//FIXME Are we using this method?
 $app->post("/meals/upload", function () use ($di, $app) {
     $mealsManager = $di->get("mealsManager");
     $responseManager = $di->get("responseManager");
@@ -92,16 +99,14 @@ $app->post("/meals/upload", function () use ($di, $app) {
     }
 });
 
-$app->delete("/meals/{id:[0-9A-Za-z]+}", function ($mealId) use ($di, $app) {
-	$mealsManager = $di->get("mealsManager");
-	$responseManager = $di->get("responseManager");
-	try {
-		$mealsManager->deleteMeal($mealId);
-		return $responseManager->getDeletedResponse();
-	}catch(YummyException $e){
-		return $responseManager->getErrorResponse($e);
-	} catch(Exception $e) {
-		return $responseManager->getGenericErrorResponse();
-	}
-});
+function tempnam_sfx($path, $suffix) {
+    do {
+        $fileName = strval(mt_rand());
+        $file = $path."/".$fileName.$suffix;
+        $fp = @fopen($file, 'x');
+    } while(!$fp);
+
+    fclose($fp);
+    return $fileName;
+}
 ?>
