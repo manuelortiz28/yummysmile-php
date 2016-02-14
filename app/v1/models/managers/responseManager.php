@@ -28,28 +28,41 @@
 			return $response;
 		}
 
-		function getErrorResponse($exception){
+		function getErrorResponse($exception, $errorList){
 			$response = $this->getOKResponse();
 
-			$response->setJsonContent(
-		            	array(
-			                'errorCode' => $exception->getCode(),
-			                'errorMessage' => $exception->getMessage(),
-			                'errors' => array()
-			            )
-		      		);
+			$newErrorList = $errorList;
+
+			if (!isset($newErrorList)) {
+				$newErrorList = array();
+			}
 
 			switch ($exception->getCode()) {
+				case 400:
+					$response->setStatusCode(400, "Bad Request");
+					$errorMessage = "Bad Request";
+					break;
 				case 401:
 					$response->setStatusCode(401, "Unauthorized");
+					$errorMessage = "Unauthorized";
 					break;
 				case 404:
 					$response->setStatusCode(404, "Not Found");
+					$errorMessage = "Not Found";
 					break;
 				case 500:
 				default:
 					$response->setStatusCode(500, "Internal Server Error");
+					$errorMessage = "Internal Server Error";
 			}
+
+			$response->setJsonContent(
+				array(
+					'code' => $exception->getCode(),
+					'message' => $errorMessage,
+					'errors' => $newErrorList
+				)
+			);
 
 			return $response;
 		}
