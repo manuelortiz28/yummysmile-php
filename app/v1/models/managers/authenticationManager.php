@@ -29,11 +29,40 @@ class AuthenticationManager implements InjectionAwareInterface {
         $user = $query->first();
 		
 		//If the user doesn´t exist, then create a new one
-		if($user) {
-			throw new YummyException("This user already exists", 401);
+		if ($user) {
+			throw new YummyException("This user already exists", 409);
 		}
 
 		$user = new ParseUser();
+
+		$errorList = array();
+
+		if (empty($authenticationData->name)
+			|| empty($authenticationData->lastname)
+			|| empty($authenticationData->email)
+			|| empty($authenticationData->password)) {
+			$errorList[] = new ErrorItem('FIELDS_REQUIRED', 'Name, LastName, email and password are mandatory');
+		}
+
+		//TODO Validate email format
+		if (!empty($authenticationData->email)) {
+			//if (strlen($authenticationData->email) < 5) {
+			//	$errorList[] = new ErrorItem('NEW_PASSWORD_INVALID', 'The email is not a email format valid');
+			//}
+		}
+
+		//TODO Validate other password business rules
+		if (!empty($authenticationData->password)) {
+			if (strlen($authenticationData->password) < 5) {
+				$errorList[] = new ErrorItem('NEW_PASSWORD_INVALID', 'Password length should be at least 5 characters');
+			}
+		}
+
+		if (count($errorList) > 0) {
+			throw new YummyException("Create user validation error", 422, $errorList);
+		}
+
+		//Validation was successful
 		$user->set("name", $authenticationData->name);
 		$user->set("lastname", $authenticationData->lastname);
 		$user->set("username", $authenticationData->email);
@@ -44,7 +73,7 @@ class AuthenticationManager implements InjectionAwareInterface {
 		try {
 			$user->signUp();
 		} catch(ParseException $e) {
-			throw new YummyException("This user already exists", 401);
+			throw new YummyException("This user already exists", 409);
 		}
 
         try {
@@ -61,6 +90,13 @@ class AuthenticationManager implements InjectionAwareInterface {
 		return $userArray;
 	}
 
+	function process_input($data) {
+		$data = trim($data);
+		$data = stripslashes($data);
+		$data = htmlspecialchars($data);
+		return $data;
+	}
+
     public function signin($authenticationData) {
 		ParseUser::logOut();//Closes any session
 
@@ -68,7 +104,7 @@ class AuthenticationManager implements InjectionAwareInterface {
 		  $user = ParseUser::logIn($authenticationData->email, $authenticationData->password);
 		} catch (ParseException $error) {
 		  // The login failed. throw an exception
-			throw new YummyException("Email or password Incorrect", 401);
+			throw new YummyException("Email or password Incorrect", 422);
 		}
 
         $userArray = $this->_di->get("responseManager")->getAttributes($this->userFields, $user);

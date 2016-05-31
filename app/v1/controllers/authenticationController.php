@@ -1,5 +1,6 @@
 <?php
 use Phalcon\Http\Response;
+
 $app->post("/loginsn", function () use ($app, $di) {
 	$authenticationManager = $di->get("authenticationManager");
 	$responseManager = $di->get("responseManager");
@@ -28,14 +29,9 @@ $app->post("/login", function () use ($di, $app) {
 	try {
 		return $responseManager->getResponse($authenticationManager->signin($authenticationData));
 	}catch(YummyException $e){
-		$errorList = array(
-			array(
-				'reason' => 'INVALID_CREDENTIALS',
-				'message' => 'User name or password invalid',
-			)
-		);
+		$e->errorList[] = new ErrorItem('INVALID_CREDENTIALS', 'User name or password invalid');
 
-		return $responseManager->getErrorResponse($e, $errorList);
+		return $responseManager->getErrorResponse($e);
 	} catch(Exception $e) {
 		return $responseManager->getGenericErrorResponse($e);
 	}

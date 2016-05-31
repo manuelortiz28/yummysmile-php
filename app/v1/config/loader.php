@@ -1,5 +1,6 @@
 <?php
 
+require $folderApp."/models/ErrorItem.php";
 require $folderApp."/models/managers/mealsManager.php";
 require $folderApp."/models/managers/responseManager.php";
 require $folderApp."/models/managers/authenticationManager.php";
@@ -9,6 +10,7 @@ $di->setShared("mealsManager", 'MealsManager');
 $di->setShared("responseManager", 'ResponseManager');
 
 // Define the routes here
+require $folderApp."/controllers/appController.php";
 require $folderApp."/controllers/mealsController.php";
 require $folderApp."/controllers/authenticationController.php";
 /*

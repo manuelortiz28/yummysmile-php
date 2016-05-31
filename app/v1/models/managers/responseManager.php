@@ -28,14 +28,8 @@
 			return $response;
 		}
 
-		function getErrorResponse($exception, $errorList){
+		function getErrorResponse($exception) {
 			$response = $this->getOKResponse();
-
-			$newErrorList = $errorList;
-
-			if (!isset($newErrorList)) {
-				$newErrorList = array();
-			}
 
 			switch ($exception->getCode()) {
 				case 400:
@@ -50,17 +44,31 @@
 					$response->setStatusCode(404, "Not Found");
 					$errorMessage = "Not Found";
 					break;
+				case 409:
+					$response->setStatusCode(409, "Conflict");
+					$errorMessage = "Conflict";
+					break;
+				case 422:
+					$response->setStatusCode(422, "Unprocessable Entity");
+					$errorMessage = "Unprocessable Entity";
+					break;
 				case 500:
 				default:
 					$response->setStatusCode(500, "Internal Server Error");
 					$errorMessage = "Internal Server Error";
 			}
 
+			if (empty($exception->errorList)) {
+				$newErrorList = array(new ErrorItem("UNKNOWN", $exception->getMessage()));
+			} else {
+				$newErrorList = $exception->errorList;
+			}
+
 			$response->setJsonContent(
 				array(
 					'code' => $exception->getCode(),
 					'message' => $errorMessage,
-					'errors' => $newErrorList
+					'errors' => ErrorItem::toArrayList($newErrorList)
 				)
 			);
 

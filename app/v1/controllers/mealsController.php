@@ -28,7 +28,7 @@ $app->post("/meals", function () use ($di, $app) {
 
         // Check if the user has uploaded files
         if (!$app->request->hasFiles()) {
-            throw new Exception("The request doesn't contain any photo", 400);
+            throw new YummyException("The request doesn't contain any photo", 400);
         }
 
         $mealString = $app->request->getPost()["meal"];
