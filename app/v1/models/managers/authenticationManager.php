@@ -1,15 +1,15 @@
 <?php
+use backendless\Backendless;
 use Parse\ParseUser;
-use Parse\ParseQuery;
+use backendless\model\BackendlessUser;
+use backendless\services\persistence\BackendlessDataQuery;
 use Parse\ParseException;
 use Phalcon\DI\InjectionAwareInterface;
 
 class AuthenticationManager implements InjectionAwareInterface {
 
-	private $userFields = array("objectId", "name", "lastname", "email");
+	private $userFields = array("objectId", "name", "lastName", "email");
 	protected $_di;
-	private $snPassword = "and='¿nwqo78$!97,.273¨`^¨";
-	private $appToken = "ADASDSAD";
 
     public function setDI (Phalcon\DiInterface $dependencyInjector){
     	$this->_di = $dependencyInjector;
@@ -20,25 +20,22 @@ class AuthenticationManager implements InjectionAwareInterface {
     }
 
     public function signup($authenticationData) {
-
-		ParseUser::logOut();//Closes any session
+		//TODO Closes any session
 
 		//Search for the user
-		$query = ParseUser::query();
-		$query->equalTo("email", $authenticationData->email);
-        $user = $query->first();
-		
-		//If the user doesn´t exist, then create a new one
-		if ($user) {
+		$query = new BackendlessDataQuery();
+		$query->setWhereClause("email = '".$authenticationData->email."'");
+		$result_collection = Backendless::$Persistence->of('Users')->find($query)->getAsObjects();
+
+		//If the user doesn't exist, then create a new one
+		if (count($result_collection) > 0) {
 			throw new YummyException("This user already exists", 409);
 		}
-
-		$user = new ParseUser();
 
 		$errorList = array();
 
 		if (empty($authenticationData->name)
-			|| empty($authenticationData->lastname)
+			|| empty($authenticationData->lastName)
 			|| empty($authenticationData->email)
 			|| empty($authenticationData->password)) {
 			$errorList[] = new ErrorItem('FIELDS_REQUIRED', 'Name, LastName, email and password are mandatory');
@@ -63,27 +60,21 @@ class AuthenticationManager implements InjectionAwareInterface {
 		}
 
 		//Validation was successful
-		$user->set("name", $authenticationData->name);
-		$user->set("lastname", $authenticationData->lastname);
-		$user->set("username", $authenticationData->email);
-		$user->set("email", $authenticationData->email);
-		$user->set("password", $authenticationData->password);
-		$user->set("socialNetworkType", "none");
+		$user = new BackendlessUser();
+		$user->setProperty("name", $authenticationData->name);
+		$user->setProperty("lastName", $authenticationData->lastName);
+		$user->setProperty("username", $authenticationData->email);
+		$user->setEmail($authenticationData->email);
+		$user->setPassword($authenticationData->password);
+		$user->setProperty("socialNetworkType", "none");
 
 		try {
-			$user->signUp();
-		} catch(ParseException $e) {
+			$user = Backendless::$UserService->register($user);
+		} catch(Exception $e) {
 			throw new YummyException("This user already exists", 409);
 		}
 
-        try {
-            $user = ParseUser::logIn($authenticationData->email, $authenticationData->password);
-        } catch (ParseException $error) {
-            // The login failed. Check error to see why.
-        }
-
         $userArray = $this->_di->get("responseManager")->getAttributes($this->userFields, $user);
-        $userArray["token"]=$user->getSessionToken();
 
         $this->changeExpirationDate($user->getSessionToken());
 		
@@ -97,20 +88,25 @@ class AuthenticationManager implements InjectionAwareInterface {
 		return $data;
 	}
 
-    public function signin($authenticationData) {
-		ParseUser::logOut();//Closes any session
+    public function login($authenticationData) {
+		//TODO Closes any session
 
 		try {
-		  $user = ParseUser::logIn($authenticationData->email, $authenticationData->password);
-		} catch (ParseException $error) {
-		  // The login failed. throw an exception
+		  $user = Backendless::$UserService->login($authenticationData->email, $authenticationData->password);
+		} catch (Exception $error) {
 			throw new YummyException("Email or password Incorrect", 422);
 		}
 
         $userArray = $this->_di->get("responseManager")->getAttributes($this->userFields, $user);
-        $userArray["token"]=$user->getSessionToken();
+        $userArray["token"]=$user->getProperty("user-token");
 
         $this->changeExpirationDate($user->getSessionToken());
+
+		//Stores user into a session
+		$session = new yummy\models\YummySession();
+		$session->setProperty("user", $user);
+		$session->setToken("token", $user->getProperty("user-token"));
+		Backendless::$Persistence->save($session);
 
 		return $userArray;
 	}
@@ -167,26 +163,56 @@ class AuthenticationManager implements InjectionAwareInterface {
 		return $user;
 	}
 
-	function signout($token, $userId) {
+	function signOut($token, $userId) {
 
 		if ($this->isLoggedIn($token, $userId)) {
-			ParseUser::logOut();//Closes any session
+			//Closes any session
+			try {
+				Backendless::$UserService->logout($token);
+			} catch (Exception $exception) {
+			}
+
+			//Delete session
+			$session = $this->findSession($token, $userId);
+			if ($session) {
+				Backendless::$Data->of("YummySession")->remove($session);
+			}
 		}
 
 		return true;
 	}
 
     function isLoggedIn($token, $userId) {
-		try {
-			ParseUser::become($token);
+		//TODO Delete all expired sessions
 
-			if (ParseUser::getCurrentUser() && ParseUser::getCurrentUser()->getObjectId() == $userId) {
-				return ParseUser::getCurrentUser();
-			}
-        } catch (ParseException $ex) {
-        }
+		$session = $this->findSession($token, $userId);
+
+		if($session) {
+			Backendless::$UserService->setCurrentUser($session->getUser());
+		}
+
+		//If the user is still logged in
+		$currentUser = Backendless::$UserService->getCurrentUser();
+		if ($currentUser && $currentUser->getUserId() == $userId) {
+			return $currentUser;
+		}
+
         return false;
     }
+
+	private function findSession($token, $userId) {
+		//Search for the User session
+		$sessionQuery = new BackendlessDataQuery();
+		$sessionQuery->setDepth(1);
+		$sessionQuery->setWhereClause("user.objectId = '" . $userId . "' and token = '".$token."'");
+		$sessionResults = Backendless::$Persistence->of('YummySession')->find($sessionQuery)->getAsClasses();
+
+		if (count($sessionResults) > 0) {
+			return $sessionResults[0];
+		}
+
+		return false;
+	}
 
 	function validateFbSession($idProfile, $token) {
 		$session = $this->getFbSession($token);

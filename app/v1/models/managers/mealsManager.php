@@ -1,11 +1,11 @@
 <?php
-use Parse\ParseQuery;
-use Parse\ParseObject;
+use backendless\Backendless;
+use backendless\services\persistence\BackendlessDataQuery;
 use Phalcon\DI\InjectionAwareInterface;
 
 class MealsManager implements InjectionAwareInterface {
 
-	private $fields = array("objectId", "name", "filename");
+	private $fields = array("objectId", "name", "fileName");
 	protected $_di;
 
     public function setDI (Phalcon\DiInterface $dependencyInjector){
@@ -16,20 +16,24 @@ class MealsManager implements InjectionAwareInterface {
     	return $this->_di;
     }
 
-	public function getMeals($name, $user) {
+	public function getMeals($name, $user)
+	{
+		$mealQuery = new BackendlessDataQuery();
+		$mealQuery->setDepth(1);
 
-		$mealQuery = new ParseQuery("Meal");
-		$mealQuery->equalTo("user", $user);
+		$condition = "user.objectId = '" . $user->getObjectId() . "'";
 
-		if($name)
-			$mealQuery->startsWith("name", $name);
+		if ($name) {
+			$condition = $condition." and name LIKE '".$name."%'";
+		}
 
-		$results = $mealQuery->find();
+		$mealQuery->setWhereClause($condition);
+		$results = Backendless::$Persistence->of('Meal')->find($mealQuery)->getAsClasses();
 
 		$i=0;
 		$rows=[];
 		foreach($results as $pMeal) {
-			$pMeal->set("filename", "/public/images/".$pMeal->get("filename").".jpg");
+			$pMeal->setProperty("fileName", "/public/images/".$pMeal->getFileName().".jpg");
 			$mealAttrs = $this->_di->get("responseManager")->getAttributes($this->fields, $pMeal);
 
 			$rows[$i++] = $mealAttrs;
@@ -39,52 +43,54 @@ class MealsManager implements InjectionAwareInterface {
 	}
 
 	public function createMeal($meal) {
-		$pMeal = new ParseObject("Meal");
-		$pMeal->set("name", $meal->name);
-		$pMeal->set("user", $meal->user);
-		$pMeal->set("filename", $meal->filename);
+		$pMeal = new Meal();
+		$pMeal->setProperty("name",$meal->name);
+		$pMeal->setProperty("user", $meal->user);
+		$pMeal->setProperty("fileName", $meal->fileName);
 
 		try {
-			$pMeal->save();
+			$pMeal = Backendless::$Persistence->save($pMeal);
 		} catch(Exception $e){
-			throw new YummyException("Error Processing Request addMeal", 1);
-			
+			throw new YummyException("Error Processing Request addMeal ".$e->getMessage(), 500);
 		}
 		
 	    return $this->_di->get("responseManager")->getAttributes($this->fields, $pMeal);
 	}
 
 	public function updateMeal($meal) {
-		$query = new ParseQuery("Meal");
 		try {
-			$pMeal = $query->get($meal->objectId);
+			$pMeal = $this->findById($meal->objectId);
+			$pMeal->setProperty("name", $meal->name);
+			Backendless::$Data->of("Meal")->save($pMeal);
 		} catch(Exception $e) {
-			throw new YummyException("Meal with id ".$meal->objectId." not found", 404);
+			$pMeal = null;
 		}
 
-		$pMeal->set("name", $meal->name);
-		$pMeal->set("price", $meal->price);
-
-		try {
-			$pMeal->save();
-		} catch(Exception $e){
-			throw new YummyException("Error Processing Request addMeal", 1);
-			
+		if (!$meal) {
+			$errorList[] = new ErrorItem('ENTITY_NOT_FOUND', "Meal with id ".$meal->getObjectId()." not found");
+			throw new YummyException("Meal with id ".$meal->getObjectId()." not found", 404, $errorList);
 		}
 		
 	    return $this->_di->get("responseManager")->getAttributes($this->fields, $pMeal);
 	}
 
 	public function deleteMeal($idMeal) {
-		$query = new ParseQuery("Meal");
 		try {
-			$pMeal = $query->get($idMeal);
-			$pMeal->destroy();
+			$meal = $this->findById($idMeal);
+			Backendless::$Data->of("YummySession")->remove($meal);
 		} catch(Exception $e) {
-			throw new YummyException("Meal with id ".$idMeal." not found", 404);
 		}
 
-		$pMeal->delete();
+		if (!$meal) {
+			$errorList[] = new ErrorItem('ENTITY_NOT_FOUND', "Meal with id ".$idMeal." not found");
+			throw new YummyException("Meal with id ".$idMeal." not found", 404, $errorList);
+		}
+	}
+
+	private function findById($mealId) {
+		$mealQuery = new BackendlessDataQuery();
+		$mealQuery->setWhereClause("objectId = '" . $mealId . "'");
+		return Backendless::$Persistence->of('Meal')->findById($mealId);
 	}
 }
 ?>

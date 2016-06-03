@@ -1,11 +1,11 @@
 <?php
+
 $app->get("/meals", function () use ($app, $di) {
     $mealsManager = $di->get("mealsManager");
     $responseManager = $di->get("responseManager");
 
 	try {
         $name = $app->request->get("name");
-
         $user = mustBeLogged($app->request, $di);
 
         return $responseManager->getResponse(
@@ -23,7 +23,6 @@ $app->post("/meals", function () use ($di, $app) {
 	$responseManager = $di->get("responseManager");
 
 	try {
-
         $user = mustBeLogged($app->request, $di);
 
         // Check if the user has uploaded files
@@ -31,16 +30,16 @@ $app->post("/meals", function () use ($di, $app) {
             throw new YummyException("The request doesn't contain any photo", 400);
         }
 
+
         $mealString = $app->request->getPost()["meal"];
-
         $meal = json_decode($mealString);
-        $meal->user = $user;
 
-        $meal->filename = tempnam_sfx('images/', ".jpg");
+        $meal->user = $user;
+        $meal->fileName = tempnam_sfx('images/', ".jpg");
 
         foreach ($app->request->getUploadedFiles() as $file) {
             // Move the file into the application
-            $file->moveTo('images/' . $meal->filename . ".jpg");
+            $file->moveTo('images/' . $meal->fileName . ".jpg");
             break;
         }
 
@@ -72,7 +71,7 @@ $app->delete("/meals/{id:[0-9A-Za-z]+}", function ($mealId) use ($di, $app) {
 	$mealsManager = $di->get("mealsManager");
 	$responseManager = $di->get("responseManager");
 	try {
-        $user = mustBeLogged($app->request, $di);
+        mustBeLogged($app->request, $di);
 
         //FIXME Only the owner should be able to detele its meal
 		$mealsManager->deleteMeal($mealId);
@@ -80,7 +79,7 @@ $app->delete("/meals/{id:[0-9A-Za-z]+}", function ($mealId) use ($di, $app) {
 	}catch(YummyException $e){
 		return $responseManager->getErrorResponse($e);
 	} catch(Exception $e) {
-		return $responseManager->getGenericErrorResponse();
+		return $responseManager->getGenericErrorResponse($e);
 	}
 });
 
