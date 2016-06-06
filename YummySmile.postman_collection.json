@@ -1,0 +1,216 @@
+{
+	"id": "335ef6b1-742f-0a10-d2d7-65261455165a",
+	"name": "YummySmile_v1",
+	"description": "",
+	"order": [],
+	"folders": [
+		{
+			"id": "e7600805-77a4-b139-3aa9-fddb1546c8ed",
+			"name": "Authentication",
+			"description": "",
+			"order": [
+				"8a71716f-3dc8-5b25-58e5-e97980729d37",
+				"d8e64881-a91a-d91e-ad69-74d9baf3e68f",
+				"45d0e08e-6438-9dd7-b7f4-ee442bd3c837"
+			],
+			"owner": "165141"
+		},
+		{
+			"id": "760a5708-76ce-f988-e2d6-26e5fe8e71e8",
+			"name": "Meals",
+			"description": "",
+			"order": [
+				"3c44835e-36f8-92b4-5077-457e66476fa0",
+				"ebcbe905-bf04-6bd3-3b37-994cb6f2f228",
+				"401b120d-6139-6175-f905-78f53bc88137",
+				"84293687-7c5e-3364-8f2f-6e55cdea94e6"
+			],
+			"owner": "165141"
+		}
+	],
+	"timestamp": "2015-09-27T21:01:19.133Z",
+	"owner": "165141",
+	"remoteLink": "https://www.getpostman.com/collections/5c96d2775a061542c859",
+	"public": false,
+	"requests": [
+		{
+			"id": "3c44835e-36f8-92b4-5077-457e66476fa0",
+			"headers": "TOKEN: {{token}}\nUSERID: {{userid}}\n",
+			"url": "{{url}}/api/v1/meals",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [
+				{
+					"key": "fileName",
+					"value": "",
+					"type": "file",
+					"enabled": true
+				},
+				{
+					"key": "meal",
+					"value": "{\"name\" : \"Taquechis\"}",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1464935169369,
+			"name": "Add Meal",
+			"description": "",
+			"collectionId": "335ef6b1-742f-0a10-d2d7-65261455165a",
+			"responses": []
+		},
+		{
+			"id": "401b120d-6139-6175-f905-78f53bc88137",
+			"headers": "TOKEN: {{token}}\nUSERID: {{userid}}\n",
+			"url": "{{url}}/api/v1/meals",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "PUT",
+			"data": [],
+			"dataMode": "raw",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1464939764161,
+			"name": "Update meal",
+			"description": "",
+			"collectionId": "335ef6b1-742f-0a10-d2d7-65261455165a",
+			"responses": [],
+			"rawModeData": "{\n    \"objectId\" : \"C8BB197D-B36B-9C0D-FFA1-6FBDC891BF00\",\n    \"name\" : \"Tacos de bistec\"\n}"
+		},
+		{
+			"id": "45d0e08e-6438-9dd7-b7f4-ee442bd3c837",
+			"headers": "TOKEN: {{token}}\nUSERID: {{userid}}\n",
+			"url": "{{url}}/api/v1/logout",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "GET",
+			"data": [
+				{
+					"key": "filename",
+					"value": "",
+					"type": "file",
+					"enabled": true
+				},
+				{
+					"key": "meal",
+					"value": "{\"name\" : \"Tacos bistec con queso\"}",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1457933391230,
+			"name": "Logout",
+			"description": "",
+			"collectionId": "335ef6b1-742f-0a10-d2d7-65261455165a",
+			"folder": "e7600805-77a4-b139-3aa9-fddb1546c8ed"
+		},
+		{
+			"id": "84293687-7c5e-3364-8f2f-6e55cdea94e6",
+			"headers": "TOKEN: {{token}}\nUSERID: {{userid}}\n",
+			"url": "{{url}}/api/v1/meals/dAoiUI6Jfe",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "DELETE",
+			"data": [],
+			"dataMode": "raw",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1457503450792,
+			"name": "Delete Meal",
+			"description": "",
+			"collectionId": "335ef6b1-742f-0a10-d2d7-65261455165a",
+			"responses": [],
+			"folder": "760a5708-76ce-f988-e2d6-26e5fe8e71e8",
+			"rawModeData": ""
+		},
+		{
+			"id": "8a71716f-3dc8-5b25-58e5-e97980729d37",
+			"headers": "",
+			"url": "{{url}}/api/v1/signup",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1464765521885,
+			"name": "Signup",
+			"description": "",
+			"collectionId": "335ef6b1-742f-0a10-d2d7-65261455165a",
+			"responses": [],
+			"folder": "e7600805-77a4-b139-3aa9-fddb1546c8ed",
+			"rawModeData": "{\n    \"name\" : \"Manuel\",\n    \"lastName\" : \"Ortiz\",\n    \"email\" : \"aldair861101@gmail.com\",\n    \"password\" : \"spiders\"\n}"
+		},
+		{
+			"id": "d8e64881-a91a-d91e-ad69-74d9baf3e68f",
+			"headers": "",
+			"url": "{{url}}/api/v1/login",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"version": 2,
+			"tests": "var data = JSON.parse(responseBody);\npostman.setEnvironmentVariable(\"token\", data.token);\npostman.setEnvironmentVariable(\"userid\", data.objectId);",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1457503387989,
+			"name": "Login",
+			"description": "",
+			"collectionId": "335ef6b1-742f-0a10-d2d7-65261455165a",
+			"folder": "e7600805-77a4-b139-3aa9-fddb1546c8ed",
+			"rawModeData": "{\n    \"email\" : \"aldair861101@gmail.com\",\n    \"password\" : \"spiders\"\n}"
+		},
+		{
+			"id": "ebcbe905-bf04-6bd3-3b37-994cb6f2f228",
+			"headers": "TOKEN: {{token}}\nUSERID: {{userid}}\n",
+			"url": "{{url}}/api/v1/meals",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "GET",
+			"data": [
+				{
+					"key": "filename",
+					"value": "",
+					"type": "file",
+					"enabled": true
+				},
+				{
+					"key": "meal",
+					"value": "{\"name\" : \"Tacos bistec con queso\"}",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1457503417277,
+			"name": "Meals List",
+			"description": "",
+			"collectionId": "335ef6b1-742f-0a10-d2d7-65261455165a",
+			"responses": [],
+			"folder": "760a5708-76ce-f988-e2d6-26e5fe8e71e8"
+		}
+	]
+}

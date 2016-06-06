@@ -82,16 +82,16 @@
 		function getAttributes($fields, $entity) {
 			$attributes=[];
 			foreach($fields as $field) {
-				$valueField = null;
+                $valueField = null;
 
-				if($field == "objectId")
-					$valueField = $entity->getObjectId();
-				else if($field == "updatedAt")
-					$valueField = $entity->getUpdatedAt();
-				else if($field == "createdAt")
-					$valueField = $entity->getCreatedAt();
-				else
-					$valueField = $entity->get($field);
+                if ($field == "objectId")
+                    $valueField = $entity->objectId;
+                else if ($field == "updatedAt")
+                    $valueField = $entity->updated();
+                else if ($field == "createdAt")
+                    $valueField = $entity->created();
+                else
+                    $valueField = $entity->getProperty($field);
 
 				$attributes += array($field => $valueField);
 			}

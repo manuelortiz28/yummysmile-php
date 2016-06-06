@@ -1,7 +1,7 @@
 <?php
 use Phalcon\Mvc\Micro;
 use Parse\ParseClient;
-use Parse\ParseSessionStorage;
+use backendless\Backendless;
 
 $folderApp = "../app/".$_GET["version"];
 
@@ -12,15 +12,18 @@ if (!file_exists($folderApp)) {
 
 date_default_timezone_set('utc');
 
-require '../vendor/autoload.php';
+require '../parse/autoload.php';
+require "../backendless/autoload.php";
 
 ParseClient::initialize( 
 	"QeaC0alUEePt3hDsAx9tXRcxFXjzfHiP5KWE5h8T",
 	"cA6mLGVYPExKeIVvEF4bgq5n06II8UEXCW6gpcNn",
 	"1XfBXA0trvI9GjRn9WcOPTU3bghsofy6H9cL8y1n" );
 
-//session_start();
-//ParseClient::setStorage( new ParseSessionStorage() );
+Backendless::initApp(
+    "B4F73CC4-EAB1-1665-FF98-858940A5A700",
+    "D807B131-3B9D-AC06-FFE6-21CB56387800",
+    "v1");
 
 $app = new Micro();
 
@@ -39,6 +42,7 @@ function mustBeLogged($request, $di) {
     $userId = $request->getHeader("USERID");
 
     $user = $authenticationManager->isLoggedIn($token, $userId);
+
     if (!$user) {
         throw new YummyException("The user is not logged in", 401);
     }

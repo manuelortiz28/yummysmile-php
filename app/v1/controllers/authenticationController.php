@@ -1,25 +1,6 @@
 <?php
 use Phalcon\Http\Response;
 
-$app->post("/loginsn", function () use ($app, $di) {
-	$authenticationManager = $di->get("authenticationManager");
-	$responseManager = $di->get("responseManager");
-
-	$authenticationData = $app->request->getJsonRawBody();//email, snUid
-	$authenticationData["userId"] = $app->request->getHeader("UID");
-	$authenticationData["socialNetworkType"] = $app->request->getHeader("SN");
-	$authenticationData["socialNetworkToken"] = $app->request->getHeader("SNTOKEN");
-
-	try {
-		$authenticationManager->signinSocialNetwork($authenticationData);
-		return new Response();
-	}catch(YummyException $e){
-		return $responseManager->getErrorResponse($e);
-	} catch(Exception $e) {
-		return $responseManager->getGenericErrorResponse($e);
-	}
-});
-
 $app->post("/login", function () use ($di, $app) {
 	$authenticationManager = $di->get("authenticationManager");
 	$responseManager = $di->get("responseManager");
@@ -27,7 +8,7 @@ $app->post("/login", function () use ($di, $app) {
 	$authenticationData = $app->request->getJsonRawBody();//email, password
 
 	try {
-		return $responseManager->getResponse($authenticationManager->signin($authenticationData));
+		return $responseManager->getResponse($authenticationManager->login($authenticationData));
 	}catch(YummyException $e){
 		$e->errorList[] = new ErrorItem('INVALID_CREDENTIALS', 'User name or password invalid');
 
@@ -41,7 +22,7 @@ $app->post("/signup", function () use ($di, $app) {
 	$authenticationManager = $di->get("authenticationManager");
 	$responseManager = $di->get("responseManager");
 
-	$authenticationData = $app->request->getJsonRawBody();//email, password, name, lastname
+	$authenticationData = $app->request->getJsonRawBody();//email, password, name, lastName
 
 	try {
         return $responseManager->getCreatedResponse($authenticationManager->signup($authenticationData));
@@ -60,9 +41,25 @@ $app->get("/logout", function () use ($di, $app) {
 	$userId = $app->request->getHeader("USERID");
 
 	try {
-		$authenticationManager->signout($token, $userId);
+		$authenticationManager->signOut($token, $userId);
 		return $responseManager->getNotContentResponse();
 	}catch(YummyException $e){
+		return $responseManager->getErrorResponse($e);
+	} catch(Exception $e) {
+		return $responseManager->getGenericErrorResponse($e);
+	}
+});
+
+$app->post("/recoverpassword", function () use ($di, $app) {
+	$authenticationManager = $di->get("authenticationManager");
+	$responseManager = $di->get("responseManager");
+
+	$authenticationData = $app->request->get("email");//email
+
+	try {
+		$authenticationManager->recoverPassword($authenticationData);
+		return $responseManager->getNotContentResponse();
+	}catch(YummyException $e) {
 		return $responseManager->getErrorResponse($e);
 	} catch(Exception $e) {
 		return $responseManager->getGenericErrorResponse($e);
