@@ -41,11 +41,8 @@ class AuthenticationManager implements InjectionAwareInterface {
 			$errorList[] = new ErrorItem('FIELDS_REQUIRED', 'Name, LastName, email and password are mandatory');
 		}
 
-		//TODO Validate email format
-		if (!empty($authenticationData->email)) {
-			//if (strlen($authenticationData->email) < 5) {
-			//	$errorList[] = new ErrorItem('NEW_PASSWORD_INVALID', 'The email is not a email format valid');
-			//}
+		if (!isEmailValid($authenticationData->email)) {
+			$errorList[] = new ErrorItem('NEW_PASSWORD_INVALID', 'The email is not a email format valid');
 		}
 
 		//TODO Validate other password business rules
@@ -81,13 +78,6 @@ class AuthenticationManager implements InjectionAwareInterface {
 		return $userArray;
 	}
 
-	function process_input($data) {
-		$data = trim($data);
-		$data = stripslashes($data);
-		$data = htmlspecialchars($data);
-		return $data;
-	}
-
     public function login($authenticationData) {
 		//TODO Closes any session
 
@@ -109,58 +99,6 @@ class AuthenticationManager implements InjectionAwareInterface {
 		Backendless::$Persistence->save($session);
 
 		return $userArray;
-	}
-
-	function signinSocialNetwork($authenticationData) {
-		ParseUser::logOut();//Closes any session
-
-		//Search for the user
-		$query = ParseUser::query();
-		$user = $query->equalTo("email", $authenticationData->email);
-		
-		//If the user doesn´t exist, then create a new one
-		if(!$user) {
-			$user = new ParseUser();
-			$user->set("username", $authenticationData->email);
-			$user->set("email", $authenticationData->email);
-			$user->set("password", $this->snPassword);
-			$user->set("socialNetworkUserId", $authenticationData->snUid);
-			$user->set("socialNetworkType", $authenticationData->socialNetworkType);
-
-			try {
-				$user->signUp();
-			} catch(ParseException $e) {
-				throw new YummyException("Other user exists with the same email address", 401);
-			}
-		}
-
-		ParseUser::logOut();//Closes any session
-
-		if ($user->get("socialNetworkType") != $this->socialNetworkType) {
-			throw new YummyException("You could not sign in with this social network. You created your account in another way", 401);
-		}
-
-		//Validates with the social network API if it is currently logged
-		if ($user->get("socialNetworkType") == "fb" 
-				&& $this->validateFbSession($user->get("socialNetworkUserId"), $user->get("socialNetworkToken"))) {
-			$authenticated = true;
-		} else if ($user->get("socialNetworkType") == "g+"
-				&& $this->validateGooglePlusSession($user->get("socialNetworkUserId"), $user->get("socialNetworkToken"))) {
-			$authenticated = true;
-		}
-
-		if($authenticated) {
-			try {
-                $user = ParseUser::logIn($authenticationData->email, $this->snPassword);
-                $this->changeExpirationDate($user->getSessionToken());
-			} catch (ParseException $error) {
-				throw new YummyException("Unable to login", 500);
-			}
-		} else {
-			throw new YummyException("The session has expired", 401);
-		}
-
-		return $user;
 	}
 
 	function signOut($token, $userId) {
@@ -200,6 +138,25 @@ class AuthenticationManager implements InjectionAwareInterface {
         return false;
     }
 
+	function recoverPassword($email) {
+
+		if ($this->isEmailValid($email)) {
+			try {
+				Backendless::$UserService->restorePassword($email);
+			} catch (Exception $e) {
+				throw new YummyException(
+					'Could not recovery password for "$username"',
+					422,
+					array(new ErrorItem ("USERNAME_NON_EXISTENT", "The username provided doesn't exist")));
+			}
+		} else {
+			throw new YummyException(
+				'Could not recovery password for "$username"',
+				422,
+				array(new ErrorItem ("INVALID_USERNAME", "The format for the username is incorrect. Should be an email address.")));
+		}
+	}
+
 	private function findSession($token, $userId) {
 		//Search for the User session
 		$sessionQuery = new BackendlessDataQuery();
@@ -214,26 +171,25 @@ class AuthenticationManager implements InjectionAwareInterface {
 		return false;
 	}
 
-	function validateFbSession($idProfile, $token) {
-		$session = $this->getFbSession($token);
-		if($session->error) return false;
+	private function isEmailValid($email) {
+		if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL) ) {
+			return false;
+		}
 
-		return $session->data->user_id == $idProfile;
+		return true;
 	}
 
-	function getFbSession($token) {
-		$lines = file("https://graph.facebook.com/debug_token?input_token=".$token."&access_token=".$this->appToken);
-		return json_decode($lines);
-	}
-
-	function validateGooglePlusSession($idProfile, $token) {
-		return false;
-	}
-
-    //FIXME Currently it is not working since Parse could not change session expiration date
-	function changeExpirationDate($token) {
+	//FIXME Currently it is not working since Parse could not change session expiration date
+	private function changeExpirationDate($token) {
 		//Add 2 days to current date and apply the ISO8601 format
 		$expirationDate = gmdate(DateTime::ISO8601, time() + (2 * 24 * 60 * 60));
+	}
+
+	private function process_input($data) {
+		$data = trim($data);
+		$data = stripslashes($data);
+		$data = htmlspecialchars($data);
+		return $data;
 	}
 }
 ?>
