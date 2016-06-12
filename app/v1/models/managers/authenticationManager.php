@@ -41,7 +41,7 @@ class AuthenticationManager implements InjectionAwareInterface {
 			$errorList[] = new ErrorItem('FIELDS_REQUIRED', 'Name, LastName, email and password are mandatory');
 		}
 
-		if (!isEmailValid($authenticationData->email)) {
+		if (!$this->isEmailValid($authenticationData->email)) {
 			$errorList[] = new ErrorItem('NEW_PASSWORD_INVALID', 'The email is not a email format valid');
 		}
 
