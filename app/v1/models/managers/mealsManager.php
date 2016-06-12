@@ -43,7 +43,7 @@ class MealsManager implements InjectionAwareInterface {
 	}
 
 	public function createMeal($meal) {
-		$pMeal = new Meal();
+		$pMeal = new yummy\models\Meal();
 		$pMeal->setProperty("name",$meal->name);
 		$pMeal->setProperty("user", $meal->user);
 		$pMeal->setProperty("fileName", $meal->fileName);

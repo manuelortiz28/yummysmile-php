@@ -1,9 +1,7 @@
 <?php
 use backendless\Backendless;
-use Parse\ParseUser;
 use backendless\model\BackendlessUser;
 use backendless\services\persistence\BackendlessDataQuery;
-use Parse\ParseException;
 use Phalcon\DI\InjectionAwareInterface;
 
 class AuthenticationManager implements InjectionAwareInterface {
