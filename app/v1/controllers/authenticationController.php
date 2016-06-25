@@ -10,8 +10,6 @@ $app->post("/login", function () use ($di, $app) {
 	try {
 		return $responseManager->getResponse($authenticationManager->login($authenticationData));
 	}catch(YummyException $e){
-		$e->errorList[] = new ErrorItem('INVALID_CREDENTIALS', 'User name or password invalid');
-
 		return $responseManager->getErrorResponse($e);
 	} catch(Exception $e) {
 		return $responseManager->getGenericErrorResponse($e);

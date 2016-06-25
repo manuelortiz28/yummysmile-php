@@ -11,7 +11,8 @@
 			"order": [
 				"8a71716f-3dc8-5b25-58e5-e97980729d37",
 				"d8e64881-a91a-d91e-ad69-74d9baf3e68f",
-				"45d0e08e-6438-9dd7-b7f4-ee442bd3c837"
+				"45d0e08e-6438-9dd7-b7f4-ee442bd3c837",
+				"80533bfb-4eb2-5119-976d-a5cef2e46955"
 			],
 			"owner": "165141"
 		},
@@ -118,6 +119,26 @@
 			"folder": "e7600805-77a4-b139-3aa9-fddb1546c8ed"
 		},
 		{
+			"id": "80533bfb-4eb2-5119-976d-a5cef2e46955",
+			"headers": "",
+			"url": "{{url}}/api/v1/recoverpassword?email=aldair861101@gmail.com",
+			"preRequestScript": null,
+			"pathVariables": {},
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"version": 2,
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1465227574703,
+			"name": "Recover Password",
+			"description": "Recover password",
+			"collectionId": "335ef6b1-742f-0a10-d2d7-65261455165a",
+			"responses": [],
+			"rawModeData": ""
+		},
+		{
 			"id": "84293687-7c5e-3364-8f2f-6e55cdea94e6",
 			"headers": "TOKEN: {{token}}\nUSERID: {{userid}}\n",
 			"url": "{{url}}/api/v1/meals/dAoiUI6Jfe",
@@ -172,11 +193,10 @@
 			"tests": "var data = JSON.parse(responseBody);\npostman.setEnvironmentVariable(\"token\", data.token);\npostman.setEnvironmentVariable(\"userid\", data.objectId);",
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"time": 1457503387989,
+			"time": 1466286797785,
 			"name": "Login",
 			"description": "",
 			"collectionId": "335ef6b1-742f-0a10-d2d7-65261455165a",
-			"folder": "e7600805-77a4-b139-3aa9-fddb1546c8ed",
 			"rawModeData": "{\n    \"email\" : \"aldair861101@gmail.com\",\n    \"password\" : \"spiders\"\n}"
 		},
 		{

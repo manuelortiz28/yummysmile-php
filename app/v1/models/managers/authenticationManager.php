@@ -82,7 +82,26 @@ class AuthenticationManager implements InjectionAwareInterface {
 		try {
 		  $user = Backendless::$UserService->login($authenticationData->email, $authenticationData->password);
 		} catch (Exception $error) {
-			throw new YummyException("Email or password Incorrect", 422);
+			$e = new YummyException("User couldn't logged in", 422);
+
+			if ($error->getCode() == 3087) {//Backendless error code, User email is not confirmed
+				$e->errorList[] =
+                    new ErrorItem(
+                        'EMAIL_NOT_CONFIRMED',
+                        "The email has not been confirmed. Please review your email inbox.");
+			} else if ($error->getCode() == 3003) {//Backendless error code, invalid credentials
+				$e->errorList[] =
+                    new ErrorItem(
+                        'INVALID_CREDENTIALS',
+                        "Username or password invalid");
+			} else {
+				$e->errorList[] =
+                    new ErrorItem(
+                        'UNKNOWN',
+                        $error->getMessage());
+			}
+
+			throw $e;
 		}
 
         $userArray = $this->_di->get("responseManager")->getAttributes($this->userFields, $user);
