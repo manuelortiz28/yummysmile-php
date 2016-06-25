@@ -196,7 +196,7 @@ class AuthenticationManager implements InjectionAwareInterface {
 		return true;
 	}
 
-	//FIXME Currently it is not working since Parse could not change session expiration date
+	//FIXME Currently it is not doing anything
 	private function changeExpirationDate($token) {
 		//Add 2 days to current date and apply the ISO8601 format
 		$expirationDate = gmdate(DateTime::ISO8601, time() + (2 * 24 * 60 * 60));
