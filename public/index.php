@@ -1,6 +1,5 @@
 <?php
 use Phalcon\Mvc\Micro;
-use Parse\ParseClient;
 use backendless\Backendless;
 
 $folderApp = "../app/".$_GET["version"];
@@ -12,13 +11,7 @@ if (!file_exists($folderApp)) {
 
 date_default_timezone_set('utc');
 
-require '../parse/autoload.php';
 require "../backendless/autoload.php";
-
-ParseClient::initialize( 
-	"QeaC0alUEePt3hDsAx9tXRcxFXjzfHiP5KWE5h8T",
-	"cA6mLGVYPExKeIVvEF4bgq5n06II8UEXCW6gpcNn",
-	"1XfBXA0trvI9GjRn9WcOPTU3bghsofy6H9cL8y1n" );
 
 Backendless::initApp(
     "B4F73CC4-EAB1-1665-FF98-858940A5A700",
