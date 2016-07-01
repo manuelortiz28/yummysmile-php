@@ -6,7 +6,9 @@ use Phalcon\DI\InjectionAwareInterface;
 
 class AuthenticationManager implements InjectionAwareInterface {
 
-	private $userFields = array("objectId", "name", "lastName", "email");
+	private $userFields = array("objectId", "name", "lastName", "email", "token");
+	private $app_id = "1750759625204363";
+	private $app_secret = "9593f7ed05b59502e31fe8550107713e";
 	protected $_di;
 
     public function setDI (Phalcon\DiInterface $dependencyInjector){
@@ -78,6 +80,7 @@ class AuthenticationManager implements InjectionAwareInterface {
 
     public function login($authenticationData) {
 		//TODO Closes any session
+		//TODO Validate that this user didn't create its account using a social network
 
 		try {
 		  $user = Backendless::$UserService->login($authenticationData->email, $authenticationData->password);
@@ -104,8 +107,8 @@ class AuthenticationManager implements InjectionAwareInterface {
 			throw $e;
 		}
 
+		$user->setProperty("token", $user->getProperty("user-token"));
         $userArray = $this->_di->get("responseManager")->getAttributes($this->userFields, $user);
-        $userArray["token"]=$user->getProperty("user-token");
 
         $this->changeExpirationDate($user->getSessionToken());
 
@@ -137,12 +140,124 @@ class AuthenticationManager implements InjectionAwareInterface {
 		return true;
 	}
 
+	function socialNetworkLogin($authenticationData, $token) {
+		$errorList = array();
+
+		if (empty($authenticationData->name)
+			|| empty($authenticationData->lastName)
+			|| empty($authenticationData->email)
+			|| empty($authenticationData->socialNetworkUserId)) {
+			$errorList[] = new ErrorItem('FIELDS_REQUIRED', 'Name, LastName, email and socialNetworkUserId are mandatory');
+		}
+
+		if (empty($token)) {
+			$errorList[] = new ErrorItem('TOKEN_INVALID', 'The token is not valid for the given social network.');
+		}
+
+		if (!$this->isEmailValid($authenticationData->email)) {
+			$errorList[] = new ErrorItem('NEW_PASSWORD_INVALID', 'The email is not a email format valid');
+		}
+
+		if (empty($authenticationData->socialNetworkType) || $authenticationData->socialNetworkType != "fb") {
+			$errorList[] = new ErrorItem('INVALID_SOCIAL_NETWORK_TYPE', 'The given social network type is not allowed.');
+		}
+
+		if (count($errorList) > 0) {
+			throw new YummyException("Create user validation error", 422, $errorList);
+		}
+
+		//Search for the user
+		$query = new BackendlessDataQuery();
+		$query->setWhereClause("email = '".$authenticationData->email."'");
+		$result_collection = Backendless::$Persistence->of('Users')->find($query)->getAsClasses();
+
+
+		$user = null;
+
+		//If the user already exists, validate that was created using the same social network
+		if (count($result_collection) > 0) {
+			$user = $result_collection[0];
+			if ($authenticationData->socialNetworkType != $user->socialNetworkType) {
+
+				$errorList[] =
+					new ErrorItem(
+						'ACCOUNT_EXISTS_WITH_DIFFERENT_TYPE',
+						'You could not sign in with this social network. You created your account in another way.');
+
+				throw new YummyException("This user already exists", 409, $errorList);
+			}
+		}
+
+		//The session is not active in the social network
+		if (!$this->validateSocialNetworkSession(
+			$authenticationData->socialNetworkUserId,
+			$token,
+			$authenticationData->socialNetworkType)) {
+
+			$errorList[] = new ErrorItem('TOKEN_INVALID', 'The token is not valid for the given social network k.');
+			throw new YummyException("Create user validation error", 422, $errorList);
+		}
+
+		//If the user doesn't exist, create it in the database
+		if ($user == null) {
+			//Validation was successful, Creates the new user.
+			$user = new BackendlessUser();
+			$user->setEmail($authenticationData->email);
+			$user->setPassword($authenticationData->socialNetworkType);
+			$user->setProperty("name", $authenticationData->name);
+			$user->setProperty("lastName", $authenticationData->lastName);
+			$user->setProperty("username", $authenticationData->email);
+			$user->setProperty("socialNetworkType", $authenticationData->socialNetworkType);
+			$user->setProperty("socialNetworkUserId", $authenticationData->socialNetworkUserId);
+
+			try {
+				$user = Backendless::$UserService->register($user);
+			} catch(Exception $e) {
+				$errorList[] =
+					new ErrorItem(
+						'UNKNOWN',
+						$e->getMessage());
+				throw new YummyException("This user already exists", 409, $errorList);
+			}
+		}
+
+		$user->setProperty("token", $token);
+		$userArray = $this->_di->get("responseManager")->getAttributes($this->userFields, $user);
+
+		$this->changeExpirationDate($user->getSessionToken());
+
+		return $userArray;
+	}
+
     function isLoggedIn($token, $userId) {
 		//TODO Delete all expired sessions
 
-		$session = $this->findSession($token, $userId);
+		//1. Retrieve user for knowing account type
+		//Search for the user
+		$query = new BackendlessDataQuery();
+		$query->setWhereClause("objectId = '".$userId."'");
+		$result_collection = Backendless::$Persistence->of('Users')->find($query)->getAsClasses();
 
-		if($session) {
+		//If the user doesn't exist
+		if (count($result_collection) == 0) {
+			return false;
+		}
+
+		$user = $result_collection[0];
+
+		//Retrieves the session
+		if ($user->getSocialNetworkType() == "none") {
+			$session = $this->findSession($token, $userId);
+		} else if ($this->validateSocialNetworkSession(
+						$user->getSocialNetworkUserId(),
+						$token,
+						$user->getSocialNetworkType())) {
+
+			$session = new yummy\models\YummySession();
+			$session->setProperty("user", $user);
+		}
+
+		if ($session) {
 			Backendless::$UserService->setCurrentUser($session->getUser());
 		}
 
@@ -207,6 +322,25 @@ class AuthenticationManager implements InjectionAwareInterface {
 		$data = stripslashes($data);
 		$data = htmlspecialchars($data);
 		return $data;
+	}
+
+	private function validateSocialNetworkSession($idProfile, $token, $socialNetworkType) {
+		if ($socialNetworkType == "fb") {
+			return $this->validateFbSession($idProfile, $token);
+		}
+
+		return false;
+	}
+
+	private function validateFbSession($idProfile, $token) {
+		$lines = file("https://graph.facebook.com/debug_token?input_token=".$token."&access_token=".$this->app_id."|".$this->app_secret);
+		$session = json_decode($lines[0]);
+
+		if(isset($session->error)) {
+			return false;
+		}
+
+		return $session->data->user_id == $idProfile;
 	}
 }
 ?>

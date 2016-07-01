@@ -63,4 +63,20 @@ $app->post("/recoverpassword", function () use ($di, $app) {
 		return $responseManager->getGenericErrorResponse($e);
 	}
 });
+
+$app->post("/loginsocialnetwork", function () use ($di, $app) {
+	$authenticationManager = $di->get("authenticationManager");
+	$responseManager = $di->get("responseManager");
+
+	$authenticationData = $app->request->getJsonRawBody();//email, name, lastName, socialNetworkType, socialNetworkUserId
+	//$token = $app->request->getHeader("TOKEN");
+	$token = $authenticationData->token;
+	try {
+		return $responseManager->getResponse($authenticationManager->socialNetworkLogin($authenticationData, $token));
+	}catch(YummyException $e){
+		return $responseManager->getErrorResponse($e);
+	} catch(Exception $e) {
+		return $responseManager->getGenericErrorResponse($e);
+	}
+});
 ?>

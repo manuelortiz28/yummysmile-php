@@ -93,7 +93,9 @@
                 else
                     $valueField = $entity->getProperty($field);
 
-				$attributes += array($field => $valueField);
+				if ($valueField != null) {
+					$attributes += array($field => $valueField);
+				}
 			}
 
 			return $attributes;
